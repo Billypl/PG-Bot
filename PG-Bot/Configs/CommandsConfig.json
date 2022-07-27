@@ -1,0 +1,5 @@
+﻿{
+  "StringPrefixes": [ "! ", "!" ],
+  "EnableMentionPrefix": true,
+  "EnableDms": false
+}

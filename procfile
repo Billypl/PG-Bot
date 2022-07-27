@@ -1,0 +1,1 @@
+bot: dotnet PG-Bot/bin/Debug/net6.0/PG-Bot.dll

@@ -1,0 +1,6 @@
+﻿{
+  "TokenType": "Bot",
+  "AutoReconnect": true,
+  "MinimumLogLevel": "Debug",
+  "Intents": "All"
+}
