@@ -1,4 +1,15 @@
 {
+  "departmentsNames": [
+    "(WA)",
+    "(WCh)",
+    "(WEiA)",
+    "(WETI)",
+    "(WFTiMS)",
+    "(WILiŚ)",
+    "(WIMiO)",
+    "(WZiE)"
+  ],
+
   "divisionsNames": [
     "Infa (WETI)",
     "Matematyka (WFTIMS)",
@@ -16,7 +27,7 @@
     "Chemia (WCh)",
     "Chemia budowlana (WCh)",
     "Korozja (WCh)",
-    "Tech. chemiczna",
+    "Tech. chemiczna (WCh)",
     "Zielone tech. (WCh)",
     "Automatyka (WEiA)",
     "Elektrotechnika (WEiA)",
@@ -37,5 +48,63 @@
     "In\u017C. Biomedyczna (WChem, WETI, WFTiMS)",
     "In\u017C. materia\u0142owa (WChem, WFTiMS, WIMiO)",
     "Ele Tele (WETI)"
-  ]
+  ],
+
+  "departaments": {
+    "WA": [
+      "Architektura (WA)",
+      "Gosp. przestrzenna (WA)"
+    ],
+    "WCh": [
+      "Biotechnologia (WCh)",
+      "Chemia (WCh)",
+      "Chemia budowlana (WCh)",
+      "Korozja (WCh)",
+      "Tech. chemiczna (WCh)",
+      "Zielone tech. (WCh)"
+    ],
+    "WEiA": [
+      "Automatyka (WEiA)",
+      "Elektrotechnika (WEiA)",
+      "Fizyka tech. (WFTIMS)",
+      "Elektromobilno\u015B\u0107 (WEiA)"
+    ],
+    "WETI": [
+      "Infa (WETI)",
+      "Automatyka (WETI)",
+      "Ele Tele (WETI)"
+    ],
+    "WFTiMS": [
+      "Matematyka (WFTIMS)",
+      "Nanotechnologie (WFTIMS)",
+      "Fizyka tech. (WFTIMS)"
+    ],
+    "WILiŚ": [
+      "Budownictwo (WILi\u015A)",
+      "Geodezja i Kartografia (WILi\u015A)",
+      "In\u017C. \u015Arodowiskowa (WILi\u015A)",
+      "Transport (WILi\u015A)"
+    ],
+    "WIMiO": [
+      "Transport i logistyka (WIMiO)",
+      "In\u017C. mech.-med. (WIMiO)",
+      "Mechanika i budowa maszyn (WIMiO)",
+      "Mechatronika (WIMiO)",
+      "Zarz\u0105dzanie i in\u017C. produkcji (WIMiO)",
+      "Oceanotechnika (WIMiO)",
+      "Budowa jacht\u00F3w (WIMiO)"
+    ],
+    "WZiE": [
+      "Zarz\u0105dzanie (WZiE)",
+      "Zarz\u0105dzanie in\u017C. (WZiE)",
+      "Ekonomia (WZiE)",
+      "Analityka gospodarcza (WZiE)"
+    ],
+    "crossDepartment": [
+      "In\u017C. Danych (WETI, WZiE)",
+      "In\u017C. Biomedyczna (WChem, WETI, WFTiMS)",
+      "Energetyka (WEiA, WIMiO, WILi\u015A)",
+      "In\u017C. materia\u0142owa (WChem, WFTiMS, WIMiO)"
+    ]
+  }
 }

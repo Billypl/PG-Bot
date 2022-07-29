@@ -1,8 +1,11 @@
 ﻿using System.Collections.ObjectModel;
+using System.Runtime.InteropServices.ComTypes;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.EventHandling;
+using PG_Bot.Commands;
 using PG_Bot.Helper;
+using PG_Bot.Scripts;
 using static DSharpPlus.Entities.DiscordEmbedBuilder;
 
 namespace PG_Bot.Entities
@@ -72,5 +75,109 @@ namespace PG_Bot.Entities
                 //TODO: make color and thumbnail the color of the division 
             };
         }
+
+        /// TODO: server stats
+        public static DiscordEmbedBuilder divisionsStatsEmbed()
+        {
+            return new DiscordEmbedBuilder
+            {
+                Title = "Statystyki serwera: KIERUNKI",
+                Color = DiscordColor.Blue,
+                Description = fillDivisionsStats2().Result
+            };
+        }
+
+        private static async Task<string> fillDivisionsStats()
+        {
+            var divisionNames = Bot.DivisionChoosing.divisionNames;
+            string stats = "";
+
+            var members = await Bot.DivisionChoosing.Guild.GetAllMembersAsync();
+
+
+            foreach (var name in divisionNames)
+            {
+                var divisionRole = Roles.getRoleByName(Bot.DivisionChoosing.Guild.Roles.Values, name);
+                var divisionCount = 0;
+
+                foreach (var member in members)
+                    if(member.Roles.Contains(divisionRole))
+                        divisionCount++;
+
+                stats += $"{name}: {divisionCount}\n";
+            }
+            return stats;
+        }
+        private static async Task<string> fillDivisionsStats2()
+        {
+            var divisionNames = Bot.DivisionChoosing.divisionNames;
+            string stats = "";
+
+            var members = await Bot.DivisionChoosing.Guild.GetAllMembersAsync();
+            var departments = Bot.DivisionChoosing.departaments;
+
+            stats += "*Wszyscy członkowie serwera:* " + members.Count() + "\n";
+            stats += "*Wszyscy z przypisanym kierunkiem:* " + getMembersCountWithDivisionAssigned(members) + "\n";
+
+            stats += "\n**Wydział: WA**";
+            stats += await generateDepartmentStats(departments.WA, members);
+            stats += "\n**Wydział: WCh**";
+            stats += await generateDepartmentStats(departments.WCh, members);
+            stats += "\n**Wydział: WETI**";
+            stats += await generateDepartmentStats(departments.WETI, members);
+            stats += "\n**Wydział: WEiA**";
+            stats += await generateDepartmentStats(departments.WEiA, members);
+            stats += "\n**Wydział: WFTiMS**";
+            stats += await generateDepartmentStats(departments.WFTiMS, members);
+            stats += "\n**Wydział: WILiŚ**";
+            stats += await generateDepartmentStats(departments.WILiŚ, members);
+            stats += "\n**Wydział: WIMiO**";
+            stats += await generateDepartmentStats(departments.WIMiO, members);
+            stats += "\n**Wydział: WZiE**";
+            stats += await generateDepartmentStats(departments.WZiE, members);
+
+            return stats;
+        }
+
+        private static int getMembersCountWithDivisionAssigned(IReadOnlyCollection<DiscordMember> members)
+        {
+            int membersCountWithDivisionAssigned = 0;
+            foreach (var member in members)
+                if (member.Roles.Count() != 0)
+                    membersCountWithDivisionAssigned++;
+            return membersCountWithDivisionAssigned;
+        }
+
+        private static async Task<string> generateDepartmentStats(List<string> divisionsNames, IReadOnlyCollection<DiscordMember> members)
+        {
+            var departmentMembersCount = 0;
+            string departmentStats = "";
+
+            var divisionMembersCount = 0;
+            foreach (var divisionName in divisionsNames)
+            {
+                departmentStats += divisionName + ": ";
+                divisionMembersCount = await generateDivisionStats(members, divisionName);
+                departmentMembersCount += divisionMembersCount;
+                departmentStats += divisionMembersCount.ToString();
+                departmentStats += "\n";
+            }
+            var stats = "";
+            stats += " (" + departmentMembersCount + ")" + "\n" + departmentStats;
+            return stats;
+        }
+
+        private static async Task<int> generateDivisionStats(IReadOnlyCollection<DiscordMember> members, string divisionName)
+        {
+            var divisionRole = Roles.getRoleByName(Bot.DivisionChoosing.Guild.Roles.Values, divisionName);
+            var divisionMembersCount = 0;
+
+            foreach (var member in members)
+                if (member.Roles.Contains(divisionRole))
+                    divisionMembersCount++;
+
+            return divisionMembersCount;
+        }
+
     }
 }

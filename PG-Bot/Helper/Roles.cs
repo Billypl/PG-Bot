@@ -12,7 +12,7 @@ namespace PG_Bot.Helper
 {
     public static class Roles
     {
-        private static readonly string[] authorizedRolesNames = { "Tester", "Bot-Dev", "Tester" };
+        private static readonly string[] authorizedRolesNames = { "Tester", "Bot-Dev" };
         //TODO: change IEnumerable to IReadOnlyDictionary
         public static bool hasNeededPermissions(DiscordMember member, IEnumerable<DiscordRole> roles)
         {
