@@ -5,7 +5,7 @@ using DSharpPlus.Interactivity;
 using System.Threading.Tasks;
 using PG_Bot.Commands;
 using PG_Bot.Configs;
-
+using PG_Bot.Helper;
 
 namespace PG_Bot.Scripts
 {
@@ -23,6 +23,7 @@ namespace PG_Bot.Scripts
             Client.Ready += OnClientReady;
             Client.GuildDownloadCompleted += OnGuildDownloadCompleted;
             Client.MessageReactionAdded += OnMessageReactionAdded;
+            Client.MessageCreated += OnMessageCreated;
 
             Commands.RegisterCommands<Commands.AnswerCommands>();
             Commands.RegisterCommands<Commands.RoleCommands>();
@@ -34,10 +35,23 @@ namespace PG_Bot.Scripts
             await Task.Delay(-1); // prevents auto-disconnecting
         }
 
-        private Task OnMessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs e)
+        private async Task OnMessageCreated(DiscordClient sender, MessageCreateEventArgs e)
         {
-            DivisionChoosing.choosedDivisionMessage(e);
-            return Task.CompletedTask;
+            await piwoCommand(e);
+        }
+
+        private async Task piwoCommand(MessageCreateEventArgs e)
+        {
+            string[] piwoKeyWords = { "piwo", "piwa", "piwko", "piwko", "piwunio", "piweczko", "piwie", "napój bogów", "chlanie", "chlańsko", "najebać", "najebię", "najebie"};
+            foreach (string piwo in piwoKeyWords)
+                if (e.Message.Author.IsBot == false && e.Message.Content.Contains(piwo, StringComparison.OrdinalIgnoreCase))
+                    await e.Message.CreateReactionAsync(Emojis.Emoji[":beer:"]);
+
+        }
+
+        private async Task OnMessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs e)
+        {
+            await DivisionChoosing.choosedDivisionMessage(e);
         }
 
         private Task OnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs e)

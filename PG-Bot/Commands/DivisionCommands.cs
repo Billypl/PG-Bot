@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Authentication.ExtendedProtection;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DSharpPlus;
@@ -155,7 +156,7 @@ namespace PG_Bot.Commands
             return name;
         }
 
-        [Command("createDivision")]
+        //[Command("createDivision")]
         public async Task createDivision(CommandContext ctx, DiscordEmoji emoji, params string[] divisionNameParams)
         {
             if (!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles.Values)) 
@@ -196,7 +197,7 @@ namespace PG_Bot.Commands
             return new List<DiscordOverwriteBuilder>() { everyonePermissions, specialPermissions };
         }
 
-        [Command("modifyDivision")]
+        //[Command("modifyDivision")]
         public async Task modifyDivision(CommandContext ctx, string currentDivisionName, DiscordEmoji divisionEmoji, params string[] newDivisionNameParams)
         {
             if (!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles.Values))
@@ -309,7 +310,10 @@ namespace PG_Bot.Commands
 
 
             foreach (var message in divisionMessages)
-                await message.CreateReactionAsync(Emojis.Emoji[":white_check_mark:"]);
+            {
+                if (message.Reactions.Count == 0)
+                    await message.CreateReactionAsync(Emojis.Emoji[":white_check_mark:"]);
+            }
 
             return divisionMessages;
         }
@@ -348,13 +352,23 @@ namespace PG_Bot.Commands
             }
         }
 
-        
 
-        public void choosedDivisionMessage(MessageReactionAddEventArgs e)
+        public DiscordRole? getMemberDivisionRole(MessageReactionAddEventArgs e)
         {
-            if (isReactorBot(e) || Messages.All(message => message != e.Message)) 
+            var roles = ((DiscordMember)(e.User)).Roles;
+            foreach (var role in roles)
+                foreach (var divisionName in divisionNames)
+                    if (role.Name.Equals(divisionName, StringComparison.OrdinalIgnoreCase))
+                        return role;
+            return null;
+        }
+
+        public async Task choosedDivisionMessage(MessageReactionAddEventArgs e)
+        {
+            if (isReactorBot(e) || e.Channel != Channel || Messages.All(message => message != e.Message)) 
                 return;
 
+            var currentDivisionRole = getMemberDivisionRole(e);
 
             var message = e.Channel.GetMessageAsync(e.Message.Id).Result;
             var divisionName = message.Embeds[0].Title;
@@ -365,16 +379,16 @@ namespace PG_Bot.Commands
             var member = ((DiscordMember)(e.User));
 
             revokeAllDivisionRoles(member);
-            removeAllMemberDivisionReactions(divisionName, member, e.Channel);
-            member.GrantRoleAsync(divisionRole);
+            await removeAllMemberDivisionReactions(divisionName, member, e.Channel, currentDivisionRole);
+            await member.GrantRoleAsync(divisionRole);
             if(departmentsNames.Contains(departmentName, StringComparer.OrdinalIgnoreCase))
-                member.GrantRoleAsync(departmentRole);
+                await member.GrantRoleAsync(departmentRole);
 
-            var trash = refreshStatsChannel().Result;
-            Bot.DivisionChoosing.Guild.Channels[IDs.DIVISION_LOG_CHANNEL].SendMessageAsync($"Użytkownik *{((DiscordMember)(e.User)).DisplayName}* wybrał *{divisionName}*");
+            await refreshStatsChannel();
+            await Bot.DivisionChoosing.Guild.Channels[IDs.DIVISION_LOG_CHANNEL].SendMessageAsync($"Użytkownik *{((DiscordMember)(e.User)).DisplayName}* wybrał *{divisionName}*");
         }
 
-        private async Task<Task> refreshStatsChannel()
+        private async Task refreshStatsChannel()
         {
             var statsChannelMessages = Guild.GetChannel(IDs.STATS_CHANNEL).GetMessagesAsync().Result.ToList();
             foreach (var statMessage in statsChannelMessages)
@@ -382,16 +396,18 @@ namespace PG_Bot.Commands
                 if (statMessage.Embeds[0].Title.Contains("KIERUNKI"))
                     await statMessage.ModifyAsync((DiscordEmbed)Embeds.divisionsStatsEmbed());
             }
-            return Task.CompletedTask;
         }
 
         private bool isReactorBot(MessageReactionAddEventArgs e) { return e.User.IsBot; }
-        private void removeAllMemberDivisionReactions(string divisionName, DiscordMember member, DiscordChannel channel)
+        private async Task removeAllMemberDivisionReactions(string divisionName, DiscordMember member, DiscordChannel channel, DiscordRole? currentDivisionRole)
         {
+            if (currentDivisionRole is null)
+                return;
+
             var messages = channel.GetMessagesAsync().Result.ToList();
             foreach (var message in messages)
-                if (message.Author.IsBot && message.Embeds[0].Title != divisionName)
-                    message.DeleteReactionAsync(Emojis.Emoji[":white_check_mark:"], member);
+                if (message.Author.IsBot && message.Embeds[0].Title == currentDivisionRole.Name)
+                    await message.DeleteReactionAsync(Emojis.Emoji[":white_check_mark:"], member);
         }
         private void revokeAllDivisionRoles(DiscordMember member)
         {
