@@ -68,9 +68,14 @@ namespace PG_Bot.Scripts
         {
             string[] piwoKeyWords = { "piwo", "piwa", "piwko", "piwko", "piwunio", "piweczko", "piwie", "napój bogów", "chlanie", "chlańsko", "najebać", "najebię", "najebie"};
             foreach (string piwo in piwoKeyWords)
-                if (e.Message.Author.IsBot == false && e.Message.Content.Contains(piwo, StringComparison.OrdinalIgnoreCase))
+            {
+                if (e.Message.Author.IsBot == false &&
+                    e.Message.Content.Contains(piwo, StringComparison.OrdinalIgnoreCase))
+                {
                     await e.Message.CreateReactionAsync(Emojis.Emoji[":beer:"]);
-
+                    return;
+                }
+            }
         }
 
         private async Task OnMessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs e)

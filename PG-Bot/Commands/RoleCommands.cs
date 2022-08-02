@@ -19,6 +19,8 @@ namespace PG_Bot.Commands
         [Description("Manages user roles (admin-only for now)")]
         public async Task ManageRoles(CommandContext ctx, params string[] roleFormalName)
         {
+            if (!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles.Values))
+                return;
             string roleName = string.Join(" ", roleFormalName);
             DiscordRole role = getRoleByName(ctx.Guild.Roles.Values, roleName);
 
