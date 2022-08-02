@@ -5,6 +5,7 @@ using DSharpPlus.Interactivity;
 using System.Threading.Tasks;
 using PG_Bot.Commands;
 using PG_Bot.Configs;
+using PG_Bot.Data;
 using PG_Bot.Helper;
 
 namespace PG_Bot.Scripts
@@ -24,6 +25,7 @@ namespace PG_Bot.Scripts
             Client.GuildDownloadCompleted += OnGuildDownloadCompleted;
             Client.MessageReactionAdded += OnMessageReactionAdded;
             Client.MessageCreated += OnMessageCreated;
+            Client.GuildMemberAdded += ClientOnGuildMemberAdded;
 
             Commands.RegisterCommands<Commands.AnswerCommands>();
             Commands.RegisterCommands<Commands.RoleCommands>();
@@ -33,6 +35,28 @@ namespace PG_Bot.Scripts
             await Client.ConnectAsync();
 
             await Task.Delay(-1); // prevents auto-disconnecting
+        }
+
+        
+        
+
+        private async Task ClientOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs e)
+        {
+
+            var membersCount = (await e.Guild.GetAllMembersAsync()).Count();
+            if (membersCount == 420)
+                await e.Guild.GetChannel(IDs.ANNOUNCMENTS_CHANNEL).SendMessageAsync(
+                    Emojis.Emoji[":partying_face:"] +
+                    " Nasz serwer ma 420 członków " +
+                    Emojis.Emoji[":partying_face:"] +
+                    Emojis.Emoji[":smoking:"]);
+            if (membersCount == 690)
+                await e.Guild.GetChannel(IDs.ANNOUNCMENTS_CHANNEL).SendMessageAsync(
+                    Emojis.Emoji[":partying_face:"] +
+                    " Dobiliśmy do 690 członków " +
+                    Emojis.Emoji[":smirk:"] + "\n\n\n \t\t\t\t\t\t ||**nice.**||");
+
+            await DivisionChoosing.refreshStatsChannel();
         }
 
         private async Task OnMessageCreated(DiscordClient sender, MessageCreateEventArgs e)

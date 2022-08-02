@@ -36,7 +36,9 @@ namespace PG_Bot.Commands
             if(!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles.Values)) 
                 return;
 
-            await ctx.Channel.SendMessageAsync("Test");
+            var membersCount = (await ctx.Guild.GetAllMembersAsync()).Count();
+            await ctx.Guild.GetChannel(1002639288116183140).SendMessageAsync("Ilość członków: " + membersCount.ToString());
+
             //nie do końca działa
             //await assingDepartmentRoles(ctx);
         }
@@ -388,7 +390,7 @@ namespace PG_Bot.Commands
             await Bot.DivisionChoosing.Guild.Channels[IDs.DIVISION_LOG_CHANNEL].SendMessageAsync($"Użytkownik *{((DiscordMember)(e.User)).DisplayName}* wybrał *{divisionName}*");
         }
 
-        private async Task refreshStatsChannel()
+        public async Task refreshStatsChannel()
         {
             var statsChannelMessages = Guild.GetChannel(IDs.STATS_CHANNEL).GetMessagesAsync().Result.ToList();
             foreach (var statMessage in statsChannelMessages)

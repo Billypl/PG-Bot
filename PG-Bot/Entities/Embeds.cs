@@ -119,22 +119,15 @@ namespace PG_Bot.Entities
             stats += "*Wszyscy członkowie serwera:* " + members.Count() + "\n";
             stats += "*Wszyscy z przypisanym kierunkiem:* " + getMembersCountWithDivisionAssigned(members) + "\n";
 
-            stats += "\n**Wydział: WA**";
-            stats += await generateDepartmentStats(departments.WA, members);
-            stats += "\n**Wydział: WCh**";
-            stats += await generateDepartmentStats(departments.WCh, members);
-            stats += "\n**Wydział: WETI**";
-            stats += await generateDepartmentStats(departments.WETI, members);
-            stats += "\n**Wydział: WEiA**";
-            stats += await generateDepartmentStats(departments.WEiA, members);
-            stats += "\n**Wydział: WFTiMS**";
-            stats += await generateDepartmentStats(departments.WFTiMS, members);
-            stats += "\n**Wydział: WILiŚ**";
-            stats += await generateDepartmentStats(departments.WILiŚ, members);
-            stats += "\n**Wydział: WIMiO**";
-            stats += await generateDepartmentStats(departments.WIMiO, members);
-            stats += "\n**Wydział: WZiE**";
-            stats += await generateDepartmentStats(departments.WZiE, members);
+            stats += await generateDepartmentStats(departments.WA, "**Wydział: WA**" , members);
+            stats += await generateDepartmentStats(departments.WCh, "**Wydział: WCh**", members);
+            stats += await generateDepartmentStats(departments.WETI, "**Wydział: WETI**", members);
+            stats += await generateDepartmentStats(departments.WEiA, "**Wydział: WEiA**", members);
+            stats += await generateDepartmentStats(departments.WFTiMS, "**Wydział: WFTiMS**", members);
+            stats += await generateDepartmentStats(departments.WILiŚ, "**Wydział: WILiŚ**", members);
+            stats += await generateDepartmentStats(departments.WIMiO, "**Wydział: WIMiO**", members);
+            stats += await generateDepartmentStats(departments.WZiE, "**Wydział: WZiE**", members);
+            stats += await generateDepartmentStats(departments.crossDepartment, "**Międzywydziałowe**", members);
 
             return stats;
         }
@@ -148,21 +141,33 @@ namespace PG_Bot.Entities
             return membersCountWithDivisionAssigned;
         }
 
-        private static async Task<string> generateDepartmentStats(List<string> divisionsNames, IReadOnlyCollection<DiscordMember> members)
+        private static async Task<string> generateDepartmentStats(List<string> divisionsNames, string departmentName, IReadOnlyCollection<DiscordMember> members)
         {
             var departmentMembersCount = 0;
             string departmentStats = "";
 
-            var divisionMembersCount = 0;
             foreach (var divisionName in divisionsNames)
             {
+                var divisionMembersCount = 0;
                 departmentStats += divisionName + ": ";
-                divisionMembersCount = await generateDivisionStats(members, divisionName);
+
+
+                if (departmentName != "**Międzywydziałowe**")
+                {
+                    var tempDepName = getStringFromCharToChar(departmentName, ":", "**");
+                    divisionMembersCount = await generateDivisionStats(members, divisionName + " " + "("+tempDepName+")");
+
+                }
+                else
+                    divisionMembersCount = await generateDivisionStats(members, divisionName);
+                
+                
                 departmentMembersCount += divisionMembersCount;
                 departmentStats += divisionMembersCount.ToString();
                 departmentStats += "\n";
             }
             var stats = "";
+            stats += "\n" + departmentName;
             stats += " (" + departmentMembersCount + ")" + "\n" + departmentStats;
             return stats;
         }
@@ -177,6 +182,17 @@ namespace PG_Bot.Entities
                     divisionMembersCount++;
 
             return divisionMembersCount;
+        }
+
+        public static string getStringFromCharToChar(string str, string starting, string ending)
+        {
+            var startingIndex = str.IndexOf(starting);
+            var endIndex = str.LastIndexOf(ending);
+            if (startingIndex >= endIndex)
+                return null;
+            var nameLength = endIndex - startingIndex - 2;
+            string name = str.Substring(startingIndex + 2, nameLength);
+            return name;
         }
 
     }
