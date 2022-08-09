@@ -33,7 +33,7 @@ namespace PG_Bot.Commands
         [Command("query")]
         public async Task makeQuery(CommandContext ctx)
         {
-            if(!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles.Values)) 
+            if(!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles)) 
                 return;
 
             var membersCount = (await ctx.Guild.GetAllMembersAsync()).Count();
@@ -130,7 +130,7 @@ namespace PG_Bot.Commands
                 if (departmentName is null || !containsDepartment)
                     continue;
                 Console.WriteLine("////" + departmentName);
-                var departmentRole = Roles.getRoleByName(ctx.Guild.Roles.Values, departmentName);
+                var departmentRole = Roles.getRoleByName(ctx.Guild.Roles, departmentName);
                 await member.GrantRoleAsync(departmentRole);
             }
         }
@@ -161,7 +161,7 @@ namespace PG_Bot.Commands
         //[Command("createDivision")]
         public async Task createDivision(CommandContext ctx, DiscordEmoji emoji, params string[] divisionNameParams)
         {
-            if (!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles.Values)) 
+            if (!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles)) 
                 return;
 
             string divisionName = string.Join(" ", divisionNameParams);
@@ -187,7 +187,7 @@ namespace PG_Bot.Commands
         }
         private static List<DiscordOverwriteBuilder> createPermissions(DiscordRole divisionRole, DiscordGuild guild)
         {
-            DiscordRole everyone = Roles.getRoleByName(guild.Roles.Values, "@everyone");
+            DiscordRole everyone = Roles.getRoleByName(guild.Roles, "@everyone");
             var everyonePermissions = new DiscordOverwriteBuilder(everyone)
             {
                 Denied = Permissions.AccessChannels
@@ -202,7 +202,7 @@ namespace PG_Bot.Commands
         //[Command("modifyDivision")]
         public async Task modifyDivision(CommandContext ctx, string currentDivisionName, DiscordEmoji divisionEmoji, params string[] newDivisionNameParams)
         {
-            if (!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles.Values))
+            if (!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles))
                 return;
             
             string newDivisionName = string.Join(" ", newDivisionNameParams);
@@ -229,7 +229,7 @@ namespace PG_Bot.Commands
 
         private async Task changeDivisionRoleName(CommandContext ctx, string oldName, string newName)
         {
-            var divisionRole = Roles.getRoleByName(ctx.Guild.Roles.Values, oldName);
+            var divisionRole = Roles.getRoleByName(ctx.Guild.Roles, oldName);
             await divisionRole.ModifyAsync(model => model.Name = newName);
         }
 
@@ -375,8 +375,8 @@ namespace PG_Bot.Commands
             var message = e.Channel.GetMessageAsync(e.Message.Id).Result;
             var divisionName = message.Embeds[0].Title;
             var departmentName = DivisionCommands.getDepartmentName(divisionName);
-            var divisionRole = Roles.getRoleByName(e.Guild.Roles.Values, divisionName);
-            var departmentRole = Roles.getRoleByName(e.Guild.Roles.Values, departmentName);
+            var divisionRole = Roles.getRoleByName(e.Guild.Roles, divisionName);
+            var departmentRole = Roles.getRoleByName(e.Guild.Roles, departmentName);
 
             var member = ((DiscordMember)(e.User));
 

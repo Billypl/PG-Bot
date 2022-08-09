@@ -97,7 +97,7 @@ namespace PG_Bot.Entities
 
             foreach (var name in divisionNames)
             {
-                var divisionRole = Roles.getRoleByName(Bot.DivisionChoosing.Guild.Roles.Values, name);
+                var divisionRole = Roles.getRoleByName(Bot.DivisionChoosing.Guild.Roles, name);
                 var divisionCount = 0;
 
                 foreach (var member in members)
@@ -174,7 +174,7 @@ namespace PG_Bot.Entities
 
         private static async Task<int> generateDivisionStats(IReadOnlyCollection<DiscordMember> members, string divisionName)
         {
-            var divisionRole = Roles.getRoleByName(Bot.DivisionChoosing.Guild.Roles.Values, divisionName);
+            var divisionRole = Roles.getRoleByName(Bot.DivisionChoosing.Guild.Roles, divisionName);
             var divisionMembersCount = 0;
 
             foreach (var member in members)

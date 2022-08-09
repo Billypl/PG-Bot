@@ -19,10 +19,10 @@ namespace PG_Bot.Commands
         [Description("Manages user roles (admin-only for now)")]
         public async Task ManageRoles(CommandContext ctx, params string[] roleFormalName)
         {
-            if (!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles.Values))
+            if (!Roles.hasNeededPermissions(ctx.Member, ctx.Guild.Roles))
                 return;
             string roleName = string.Join(" ", roleFormalName);
-            DiscordRole role = getRoleByName(ctx.Guild.Roles.Values, roleName);
+            DiscordRole role = getRoleByName(ctx.Guild.Roles, roleName);
 
             if (!await canAssignRole(ctx, role)) return;
 
@@ -37,7 +37,7 @@ namespace PG_Bot.Commands
 
         private static async Task<bool> canAssignRole(CommandContext ctx, DiscordRole role)
         {
-            if (!hasNeededPermissions(ctx.Member, ctx.Guild.Roles.Values))
+            if (!hasNeededPermissions(ctx.Member, ctx.Guild.Roles))
             {
                 await ctx.Message.RespondAsync("You don't have permission to run this command!");
                 return false;

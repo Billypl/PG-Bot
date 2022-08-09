@@ -13,18 +13,17 @@ namespace PG_Bot.Helper
 {
     public static class Roles
     {
-        private static readonly string[] authorizedRolesNames = { "Tester", "Bot-Dev" };
-        //TODO: change IEnumerable to IReadOnlyDictionary
-        public static bool hasNeededPermissions(DiscordMember member, IEnumerable<DiscordRole> roles)
+        private static readonly string[] authorizedRolesNames = { "Admin", "Bot-Dev" };
+        public static bool hasNeededPermissions(DiscordMember member, IReadOnlyDictionary<ulong, DiscordRole> roles)
         {
             return authorizedRolesNames.Any
                 (roleName => member.Roles.Contains(getRoleByName(roles, roleName)));
         }
-        public static DiscordRole? getRoleByName(IEnumerable<DiscordRole> roles, string roleName)
+        public static DiscordRole? getRoleByName(IReadOnlyDictionary<ulong, DiscordRole> roles, string roleName)
         {
             return roles.SingleOrDefault(
                 r => string.Equals(
-                    r.Name, roleName, StringComparison.CurrentCultureIgnoreCase));
+                    r.Value.Name, roleName, StringComparison.CurrentCultureIgnoreCase)).Value;
         }
 
 
