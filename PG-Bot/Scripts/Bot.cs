@@ -37,12 +37,23 @@ namespace PG_Bot.Scripts
             await Task.Delay(-1); // prevents auto-disconnecting
         }
 
-        
-        
+
+        private async Task OnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs e)
+        {
+            var trigger = new DailyTrigger(21,37); 
+            trigger.OnTimeTriggered += async () => { await e.Guilds[IDs.PG_GUILD].GetChannel(IDs.DIVISION_LOG_CHANNEL).SendMessageAsync("21:37"); };
+
+            DivisionChoosing = new DivisionChoosingAttributes();
+        }
 
         private async Task ClientOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs e)
         {
+            await membersCount(e);
+            await DivisionChoosing.refreshStatsChannel();
+        }
 
+        private async Task membersCount(GuildMemberAddEventArgs e)
+        {
             var membersCount = (await e.Guild.GetAllMembersAsync()).Count();
             if (membersCount == 420)
                 await e.Guild.GetChannel(IDs.ANNOUNCMENTS_CHANNEL).SendMessageAsync(
@@ -55,8 +66,6 @@ namespace PG_Bot.Scripts
                     Emojis.Emoji[":partying_face:"] +
                     " Dobiliśmy do 690 członków " +
                     Emojis.Emoji[":smirk:"] + "\n\n\n \t\t\t\t\t\t ||**nice.**||");
-
-            await DivisionChoosing.refreshStatsChannel();
         }
 
         private async Task OnMessageCreated(DiscordClient sender, MessageCreateEventArgs e)
@@ -82,12 +91,7 @@ namespace PG_Bot.Scripts
         {
             await DivisionChoosing.choosedDivisionMessage(e);
         }
-
-        private Task OnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs e)
-        {
-            DivisionChoosing = new DivisionChoosingAttributes();
-            return Task.CompletedTask;
-        }
+        
 
         private Task OnClientReady(DiscordClient sender, ReadyEventArgs e)
         {
