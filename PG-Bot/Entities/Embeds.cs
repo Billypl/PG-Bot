@@ -195,5 +195,14 @@ namespace PG_Bot.Entities
             return name;
         }
 
+        public static DiscordEmbedBuilder votingMessage(string category)
+        {
+            return new DiscordEmbedBuilder
+            {
+                Title = category,
+                Description = "Wybierz emotkę kategorii, którą jesteś zainteresowany:",
+                Color = DiscordColor.Orange
+            };
+        }
     }
 }

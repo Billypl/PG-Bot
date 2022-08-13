@@ -7,6 +7,7 @@
         public const ulong STATS_CHANNEL = 1001993070243496067;
         public const ulong DIVISION_LOG_CHANNEL = 1001989233248059563;
         public const ulong ANNOUNCMENTS_CHANNEL = 999759772616241202;
+        public const ulong VOTING_CHANNEL = 1001993668204437534;
 
         //public const ulong UNVERIFIED_ROLE_ID = 984911114448019506;
         //public const ulong VERIFIED_ROLE_ID = 985120151890436158;

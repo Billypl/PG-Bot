@@ -1,151 +1,224 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
-//using System.Text.Json;
-//using System.Threading.Tasks;
-//using DSharpPlus;
-//using DSharpPlus.CommandsNext;
-//using DSharpPlus.Entities;
-//using DSharpPlus.EventArgs;
-//using PG_Bot.Commands;
-//using PG_Bot.Data;
-//using PG_Bot.Helper;
-//using PG_Bot.Scripts;
+﻿using System.Text.Json;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using Microsoft.VisualBasic;
+using PG_Bot.Commands;
+using PG_Bot.Data;
+using PG_Bot.Entities;
+using PG_Bot.Helper;
+using PG_Bot.Scripts;
+using static PG_Bot.Scripts.Bot;
 
-//namespace PG_Bot.Entities
-//{
+namespace PG_Bot.Entities
+{
+    public class VotingChannelCommands : BaseCommandModule
+    {
 
-//    public class VotingChannel
-//    {
-//        public DiscordGuild Guild;
-//        public DiscordChannel Channel;
+        [Command("addVoteMsg")]
+        public async Task addMessage(CommandContext ctx, string category)
+        {
+            await Bot.VotingChannel.addMessage(ctx, category);
+        }
 
-//        public List<DiscordMessage> VoteMessages
-//        {
-//            get
-//            {
-//                var IDs = getVoteMessagesIDs();
-//                foreach (var ID in IDs)
-//                {
-                    
-//                }
-//            }
-//            set
-//            {
+        [Command("addVoteOption")]
+        public async Task addChoice(CommandContext ctx, string categoryName, string choiceTitle, DiscordEmoji emoji)
+        {
+            await Bot.VotingChannel.addChoice(ctx, categoryName, choiceTitle, emoji);
+        }
 
-//            }
-//        }
-//        public List<ulong> MessageIDs;
-//        private const string IDsPath = "../../../Entities/VotingChannels.json";
-
-//        public VotingChannel(ulong channelID)
-//        {
-//            Guild = Bot.Client.Guilds[IDs.PG_GUILD];
-//            Channel = Guild.GetChannel(channelID);
-//            MessageIDs = getVoteMessagesIDs();
-//            VoteMessages = CreateVerifyMessages().Result;
-//        }
-
-//        public List<ulong> getVoteMessagesIDs()
-//        {
-//            var file = File.ReadAllText(IDsPath);
-//            var IDs = JsonSerializer.Deserialize<List<ulong>>(file);
-//            return MessageIDs;
-//        }
-
-//        public void addVoteMessageID(ulong voteMessageID)
-//        {
-//            var json = getVoteMessagesIDs();
-
-//            json.Add(voteMessageID);
-//            var txt = JsonSerializer.Serialize(json, new JsonSerializerOptions() { WriteIndented = true });
-//            File.WriteAllText(IDsPath, txt);
-//        }
+        [Command("removeVoteOption")]
+        public async Task removeVoteOption(CommandContext ctx, string categoryName, string choiceTitle)
+        {
+            await Bot.VotingChannel.removeChoice(ctx, categoryName, choiceTitle);
+        }
+        [Command("removeVoteMsg")]
+        public async Task removeVoteMsg(CommandContext ctx, string categoryName)
+        {
+            await Bot.VotingChannel.removeMessage(ctx, categoryName);
+        }
+    }
 
 
+    public class VotingChannel 
+    {
+        public DiscordChannel Channel;
+        public DiscordGuild Guild;
+        public List<DiscordMessage> Messages;
 
-//        public async Task<List<DiscordMessage>> CreateVerifyMessages()
-//        {
-//            getVoteMessagesIDs();
+        public VotingChannel()
+        {
+            Guild = Bot.Client.Guilds[IDs.PG_GUILD];
+            Channel = Guild.GetChannel(IDs.VOTING_CHANNEL);
+            Messages = getVotingMessages();
+        }
 
-//            var divisionMessages = await getDivisionMessages();
-//            var divisionMessagesNames = divisionMessages.Select(message => message.Embeds.FirstOrDefault()!.Title).ToList();
+        public List<DiscordMessage> getVotingMessages()
+        {
+            var messages = Channel.GetMessagesAsync().Result;
+            return messages.Where(
+                message => message.Author.IsBot && 
+                           message.Embeds is not null &&
+                           message.Embeds.Count != 0 &&
+                           message.Embeds[0].Color.Value.Equals(DiscordColor.Orange)
+                           ).ToList();
+        }
 
-//            await generateMissingClassMessages(divisionNames, divisionMessagesNames);
+        public async Task addMessage(CommandContext ctx, string category)
+        {
+            if (!Roles.hasNeededPermissions(ctx.Member!, Guild.Roles)) return;
 
-//            divisionMessages = await getDivisionMessages();
+            var msg = await ctx.Channel.SendMessageAsync(Embeds.votingMessage(category));
+            Messages.Add(msg);
+        }
+
+        public async Task addChoice(CommandContext ctx, string categoryName, string choiceTitle, DiscordEmoji emoji)
+        {
+            if (!Roles.hasNeededPermissions(ctx.Member!, Guild.Roles)) return;
+
+            var msgIndex = getMessageIndexByTitle(categoryName);
+
+            if (!(await canChoiceBeAdded(msgIndex, ctx, choiceTitle, emoji)))
+                return;
+
+            await updateEmbedAfterAddingChoice(msgIndex, choiceTitle, emoji);
+            await Messages[msgIndex].CreateReactionAsync(emoji);
+
+            await ctx.Guild.CreateRoleAsync(choiceTitle, mentionable: true);
+        }
+
+        private async Task updateEmbedAfterAddingChoice(int msgIndex, string choiceTitle, DiscordEmoji emoji)
+        {
+            var msg = Messages[msgIndex];
+            var oldEmbed = msg.Embeds[0];
+
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder(oldEmbed);
+            embed.AddField(choiceTitle, emoji, true);
+
+            msg = await msg.ModifyAsync(builder => builder.Embed = embed);
+            Messages[msgIndex] = msg;
+        }
+
+        public async Task removeChoice(CommandContext ctx, string categoryName, string choiceTitle)
+        {
+            for (int i = 0; i < Messages.Count; i++)
+            {
+                if (!isRightMessage(Messages[i], categoryName))
+                    continue;
+                var msg = Messages[i];
+                var oldEmbed = Messages[i].Embeds[0];
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder(Embeds.votingMessage(oldEmbed.Title));
+
+                foreach (var field in oldEmbed.Fields)
+                {
+                    if (field.Name == choiceTitle)
+                    {
+                        var role = Roles.getRoleByName(ctx.Guild.Roles, field.Name);
+                        await ctx.Guild.Roles[role.Id].DeleteAsync();
+                        await msg.DeleteReactionsEmojiAsync(DiscordEmoji.FromUnicode(field.Value));
+                    }
+                    else
+                        embed.AddField(field.Name, field.Value, true);
+                }
+                msg = await msg.ModifyAsync(builder => builder.Embed = embed);
+                Messages[i] = msg;
+            }
+        }
+
+        public async Task removeMessage(CommandContext ctx, string categoryName)
+        {
+            var msgIndex = getMessageIndexByTitle(categoryName);
+            var msg = Messages[msgIndex];
+
+            foreach (var field in msg.Embeds[0].Fields)
+                await removeChoice(ctx, categoryName, field.Name);
+            await msg.DeleteAsync();
+            Messages.RemoveAt(msgIndex);
+        }
+
+        private bool isRightMessage(DiscordMessage msg, string categoryName) { return msg.Embeds[0].Title == categoryName; }
+
+        private async Task<bool> canChoiceBeAdded(int msgIndex, CommandContext ctx, string choiceTitle, DiscordEmoji emoji)
+        {
+            var msg = Messages[msgIndex];
+            var oldEmbed = msg.Embeds[0];
 
 
-//            foreach (var message in divisionMessages)
-//                await message.CreateReactionAsync(Emojis.Emoji[":white_check_mark:"]);
+            if (msgIndex == -1)
+            {
+                await ctx.Channel.SendMessageAsync("Nie znaleziono wiadomości z podanym tytułem");
+                return false;
+            }
 
-//            return divisionMessages;
-//        }
-//        private async Task<List<DiscordMessage>> getDivisionMessages()
-//        {
-//            var messages = await Channel.GetMessagesAsync();
-//            var studyFieldMessages = messages.Where(message => message.Author.IsBot).ToList();
-//            return studyFieldMessages;
-//        }
+            if (oldEmbed.Fields is null)
+                return true;
 
-//        private async Task generateMissingClassMessages(List<string> divisionNames, List<string> divisionMessagesNames)
-//        {
-//            foreach (var divisionName in divisionNames)
-//            {
-//                if (divisionMessagesNames.Any(name => name == divisionName))
-//                    continue;
+            foreach (var field in oldEmbed.Fields)
+            {
+                if (field.Name == choiceTitle)
+                {
+                    await ctx.Channel.SendMessageAsync("Dana kategoria już istnieje");
+                    return false;
+                }
+                if (field.Value == emoji)
+                {
+                    await ctx.Channel.SendMessageAsync("Reakcja się powtarza!");
+                    return false;
+                }
+            }
+            return true;
+        }
 
-//                await createMissingFieldMessage(divisionName);
-//            }
+        public int getMessageIndexByTitle(string title)
+        {
+            for (int i = 0; i < Messages.Count; i++)
+                if (Messages[i].Embeds[0].Title == title)
+                    return i;
+            return -1;
+        }
 
-//        }
-//        private async Task createMissingFieldMessage(string fieldName)
-//        {
-//            await Channel.SendMessageAsync(Embeds.chooseStudyFieldEmbed(fieldName));
-//        }
+        public async Task onVoteMessageReacted(MessageReactionAddEventArgs e)
+        {
+            if (e.User.IsBot || e.Channel != Channel || Messages.All(message => message != e.Message))
+                return;
 
-//        public void changeDivisionMessage(CommandContext ctx, string currentDivisionMessageName, string newDivisionMessageName)
-//        {
-//            foreach (var message in VoteMessages)
-//            {
-//                var refreshedMessage = Channel.GetMessageAsync(message.Id).Result;
-//                if (refreshedMessage.Embeds.FirstOrDefault()!.Title == currentDivisionMessageName)
-//                    refreshedMessage.ModifyAsync((DiscordEmbed)(Embeds.chooseStudyFieldEmbed(newDivisionMessageName)));
-//                divisionNames.Remove(currentDivisionMessageName);
-//                divisionNames.Add(newDivisionMessageName);
-//            }
-//        }
+            var msg = await e.Channel.GetMessageAsync(e.Message.Id);
 
-//        public void choosedDivisionMessage(MessageReactionAddEventArgs e)
-//        {
-//            if (isReactorBot(e) || VoteMessages.All(message => message != e.Message))
-//                return;
+            foreach (var field in msg.Embeds[0].Fields)
+            {
+                if (field.Value == e.Emoji)
+                {
+                    var member = (DiscordMember)(e.User);
+                    var role = Roles.getRoleByName(e.Guild.Roles, field.Name);
+                    if(role is null) return;
 
-//            var message = e.Channel.GetMessageAsync(e.Message.Id).Result;
-//            var divisionName = message.Embeds[0].Title;
-//            var divisionRole = Roles.getRoleByName(e.Guild.Roles.Values, divisionName);
+                    await member.GrantRoleAsync(role);
+                    return;
+                }
+            }
+        }
 
-//            var member = ((DiscordMember)(e.User));
+        public async Task onVoteMessageReactionRemoved(MessageReactionRemoveEventArgs e)
+        {
+            if (e.User.IsBot || e.Channel != Channel || Messages.All(message => message != e.Message))
+                return;
 
-//            revokeAllDivisionRoles(member, message);
-//            removeAllMemberDivisionReactions(divisionName, member, e.Channel);
-//            member.GrantRoleAsync(divisionRole);
+            var msg = await e.Channel.GetMessageAsync(e.Message.Id);
 
-//        }
-//        private bool isReactorBot(MessageReactionAddEventArgs e) { return e.User.IsBot; }
-//        private void removeAllMemberDivisionReactions(string divisionName, DiscordMember member, DiscordChannel channel)
-//        {
-//            var messages = channel.GetMessagesAsync().Result.ToList();
-//            foreach (var message in messages)
-//                if (message.Author.IsBot && message.Embeds[0].Title != divisionName)
-//                    message.DeleteReactionAsync(Emojis.Emoji[":white_check_mark:"], member);
-//        }
-//        private void revokeAllDivisionRoles(DiscordMember member, DiscordMessage message)
-//        {
-//            foreach (var role in member.Roles)
-//                if (divisionNames.Contains(role.Name))
-//                    member.RevokeRoleAsync(role);
-//        }
-//    }
-//}
+            foreach (var field in msg.Embeds[0].Fields)
+            {
+                if (field.Value == e.Emoji)
+                {
+                    var member = (DiscordMember)(e.User);
+                    var role = Roles.getRoleByName(e.Guild.Roles, field.Name);
+                    if (role is null) 
+                        return;
+
+                    await member.RevokeRoleAsync(role);
+                    return;
+                }
+            }
+        }
+    }
+}

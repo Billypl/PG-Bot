@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using PG_Bot.Commands;
 using PG_Bot.Configs;
 using PG_Bot.Data;
+using PG_Bot.Entities;
 using PG_Bot.Helper;
 
 namespace PG_Bot.Scripts
@@ -18,6 +19,8 @@ namespace PG_Bot.Scripts
 
         public static DivisionChoosingAttributes DivisionChoosing;
 
+        public static VotingChannel VotingChannel;
+
         public async Task RunAsync()
         {
             ConfigManager.assignConfigs();
@@ -26,10 +29,12 @@ namespace PG_Bot.Scripts
             Client.MessageReactionAdded += OnMessageReactionAdded;
             Client.MessageCreated += OnMessageCreated;
             Client.GuildMemberAdded += ClientOnGuildMemberAdded;
+            Client.MessageReactionRemoved += ClientOnMessageReactionRemoved;
 
             Commands.RegisterCommands<Commands.AnswerCommands>();
             Commands.RegisterCommands<Commands.RoleCommands>();
             Commands.RegisterCommands<Commands.DivisionCommands>();
+            Commands.RegisterCommands<Entities.VotingChannelCommands>();
             Helper.Emojis.loadEmojis();
 
             await Client.ConnectAsync();
@@ -37,13 +42,15 @@ namespace PG_Bot.Scripts
             await Task.Delay(-1); // prevents auto-disconnecting
         }
 
-
+        
         private async Task OnGuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs e)
         {
+            // TODO: decide whether 2137 should be sent everyday with different message or like announcements easteregg
             var trigger = new DailyTrigger(21,37); 
             trigger.OnTimeTriggered += async () => { await e.Guilds[IDs.PG_GUILD].GetChannel(IDs.DIVISION_LOG_CHANNEL).SendMessageAsync("21:37"); };
 
             DivisionChoosing = new DivisionChoosingAttributes();
+            VotingChannel = new VotingChannel();
         }
 
         private async Task ClientOnGuildMemberAdded(DiscordClient sender, GuildMemberAddEventArgs e)
@@ -90,8 +97,12 @@ namespace PG_Bot.Scripts
         private async Task OnMessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs e)
         {
             await DivisionChoosing.choosedDivisionMessage(e);
+            await VotingChannel.onVoteMessageReacted(e);
         }
-        
+        private async Task ClientOnMessageReactionRemoved(DiscordClient sender, MessageReactionRemoveEventArgs e)
+        {
+            await VotingChannel.onVoteMessageReactionRemoved(e);
+        }
 
         private Task OnClientReady(DiscordClient sender, ReadyEventArgs e)
         {
